@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Aegis VPN</string>
+    <string name="vpn_notification_channel_name">وضعیت تونل امن VPN</string>
+    <string name="vpn_notification_channel_desc">نمایش وضعیت اتصال پایدار VPN، سرور فعال و دکمه قطع اتصال سریع</string>
+    <string name="vpn_notification_disconnect">قطع اتصال</string>
+    <string name="vpn_notification_connected_title">متصل به %1$s (%2$s)</string>
+    <string name="vpn_notification_connecting_title">در حال برقراری تونل امن…</string>
+    <string name="vpn_notification_body">%1$s • %2$s • %3$s</string>
+    <string name="owner_signin_cta">ورود مالک با Google</string>
+    <string name="owner_signin_title">کنترل اختصاصی مالک</string>
+    <string name="owner_signin_subtitle">این سامانه فاقد ثبت‌نام عمومی است. فقط مالک مجاز می‌تواند سرورهای Firebase و تونل VPN را مدیریت و فعال‌سازی کند.</string>
+    <string name="owner_unauthorized_error">دسترسی غیرمجاز: این حساب مالک سیستم نیست. فقط حساب مالک مجاز به کنترل سامانه است.</string>
+    <string name="tab_tunnel">تونل امن</string>
+    <string name="tab_servers">سرورهای Firebase</string>
+    <string name="tab_owner_control">کنترل مالک</string>
+</resources>

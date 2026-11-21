@@ -1,0 +1,6 @@
+{
+  "name": "Aegis VPN",
+  "description": "Secure background VPN client with foreground notifications, Firebase-managed global servers, and owner-only administrative control.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

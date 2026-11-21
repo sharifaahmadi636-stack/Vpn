@@ -1,0 +1,205 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Strict single-owner gate: verified email must match system owner
+    function isOwner() {
+      return isSignedIn() &&
+             request.auth.token.email_verified == true &&
+             request.auth.token.email == 'sharifaahmadi636@gmail.com';
+    }
+
+    function isValidProtocol(protocol) {
+      return protocol in ['WIREGUARD', 'IKEV2', 'OPENVPN', 'VLESS_TLS'];
+    }
+
+    function isValidPreferredProtocol(protocol) {
+      return protocol in ['AUTO', 'WIREGUARD', 'IKEV2', 'OPENVPN', 'VLESS_TLS'];
+    }
+
+    function isValidEventType(eventType) {
+      return eventType in ['CONNECTED', 'DISCONNECTED', 'SYSTEM_UPDATED', 'SERVER_ADDED', 'SERVER_TOGGLED', 'ERROR'];
+    }
+
+    function isValidVpnServer(data) {
+      return data.ownerId is string && data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 60 &&
+             data.country is string && data.country.size() >= 1 && data.country.size() <= 40 &&
+             data.countryCode is string && data.countryCode.size() >= 2 && data.countryCode.size() <= 4 &&
+             data.city is string && data.city.size() >= 1 && data.city.size() <= 40 &&
+             data.host is string && data.host.size() >= 3 && data.host.size() <= 120 &&
+             data.port is int && data.port >= 1 && data.port <= 65535 &&
+             data.protocol is string && isValidProtocol(data.protocol) &&
+             data.cipher is string && data.cipher.size() >= 2 && data.cipher.size() <= 40 &&
+             data.dns is string && data.dns.size() >= 3 && data.dns.size() <= 64 &&
+             data.tunnelAddress is string && data.tunnelAddress.size() >= 3 && data.tunnelAddress.size() <= 32 &&
+             data.mtu is int && data.mtu >= 1200 && data.mtu <= 1500 &&
+             data.publicKey is string && data.publicKey.size() <= 128 &&
+             data.region is string && data.region.size() >= 1 && data.region.size() <= 30 &&
+             data.loadPercent is int && data.loadPercent >= 0 && data.loadPercent <= 100 &&
+             data.latencyMs is int && data.latencyMs >= 0 && data.latencyMs <= 10000 &&
+             data.active is bool &&
+             data.recommended is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidSystemSettings(data) {
+      return data.ownerId is string && data.ownerId == request.auth.uid &&
+             data.systemEnabled is bool &&
+             data.autoConnect is bool &&
+             data.killSwitch is bool &&
+             data.dnsProtection is bool &&
+             data.fullTunnel is bool &&
+             data.persistentNotification is bool &&
+             data.autoFailover is bool &&
+             data.bypassedPackages is list && data.bypassedPackages.size() <= 50 &&
+             (data.bypassedPackages.size() == 0 || data.bypassedPackages[0] is string) &&
+             data.selectedServerId is string && data.selectedServerId.size() <= 128 &&
+             data.preferredProtocol is string && isValidPreferredProtocol(data.preferredProtocol) &&
+             data.primaryDns is string && data.primaryDns.size() >= 3 && data.primaryDns.size() <= 64 &&
+             data.secondaryDns is string && data.secondaryDns.size() >= 3 && data.secondaryDns.size() <= 64 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidConnectionLog(data) {
+      return data.ownerId is string && data.ownerId == request.auth.uid &&
+             data.serverId is string && data.serverId.size() >= 1 && data.serverId.size() <= 128 &&
+             data.serverName is string && data.serverName.size() >= 1 && data.serverName.size() <= 80 &&
+             data.countryCode is string && data.countryCode.size() >= 2 && data.countryCode.size() <= 4 &&
+             data.protocol is string && data.protocol.size() >= 1 && data.protocol.size() <= 24 &&
+             data.eventType is string && isValidEventType(data.eventType) &&
+             data.durationSec is int && data.durationSec >= 0 && data.durationSec <= 8640000 &&
+             data.bytesTransferred is int && data.bytesTransferred >= 0 &&
+             data.latencyMs is int && data.latencyMs >= 0 && data.latencyMs <= 10000 &&
+             data.note is string && data.note.size() <= 240 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    match /vpn_servers/{serverId} {
+      allow get: if isOwner() && isValidId(serverId) && existing().ownerId == request.auth.uid;
+      allow list: if isOwner() && existing().ownerId == request.auth.uid;
+
+      allow create: if isOwner() &&
+                       isValidId(serverId) &&
+                       incoming().keys().hasAll([
+                         'ownerId', 'name', 'country', 'countryCode', 'city', 'host',
+                         'port', 'protocol', 'cipher', 'dns', 'tunnelAddress', 'mtu',
+                         'publicKey', 'region', 'loadPercent', 'latencyMs', 'active',
+                         'recommended', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'ownerId', 'name', 'country', 'countryCode', 'city', 'host',
+                         'port', 'protocol', 'cipher', 'dns', 'tunnelAddress', 'mtu',
+                         'publicKey', 'region', 'loadPercent', 'latencyMs', 'active',
+                         'recommended', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidVpnServer(incoming());
+
+      allow update: if isOwner() &&
+                       isValidId(serverId) &&
+                       existing().ownerId == request.auth.uid &&
+                       incoming().ownerId == existing().ownerId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidVpnServer(incoming()) &&
+                       (
+                         // Action: Toggle active or recommended state
+                         incoming().diff(existing()).affectedKeys().hasOnly(['active', 'updatedAt']) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly(['recommended', 'updatedAt']) ||
+                         // Action: Telemetry refresh (ping / load)
+                         incoming().diff(existing()).affectedKeys().hasOnly(['latencyMs', 'loadPercent', 'updatedAt']) ||
+                         // Action: Full owner server edit
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'name', 'country', 'countryCode', 'city', 'host', 'port',
+                           'protocol', 'cipher', 'dns', 'tunnelAddress', 'mtu',
+                           'publicKey', 'region', 'loadPercent', 'latencyMs',
+                           'active', 'recommended', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if isOwner() && isValidId(serverId) && existing().ownerId == request.auth.uid;
+    }
+
+    match /system_settings/{settingId} {
+      allow get: if isOwner() && isValidId(settingId) && existing().ownerId == request.auth.uid;
+      allow list: if isOwner() && existing().ownerId == request.auth.uid;
+
+      allow create: if isOwner() &&
+                       isValidId(settingId) &&
+                       incoming().keys().hasAll([
+                         'ownerId', 'systemEnabled', 'autoConnect', 'killSwitch',
+                         'dnsProtection', 'fullTunnel', 'persistentNotification',
+                         'autoFailover', 'bypassedPackages',
+                         'selectedServerId', 'preferredProtocol', 'primaryDns',
+                         'secondaryDns', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'ownerId', 'systemEnabled', 'autoConnect', 'killSwitch',
+                         'dnsProtection', 'fullTunnel', 'persistentNotification',
+                         'autoFailover', 'bypassedPackages',
+                         'selectedServerId', 'preferredProtocol', 'primaryDns',
+                         'secondaryDns', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidSystemSettings(incoming());
+
+      allow update: if isOwner() &&
+                       isValidId(settingId) &&
+                       existing().ownerId == request.auth.uid &&
+                       incoming().ownerId == existing().ownerId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidSystemSettings(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'systemEnabled', 'autoConnect', 'killSwitch',
+                         'dnsProtection', 'fullTunnel', 'persistentNotification',
+                         'autoFailover', 'bypassedPackages',
+                         'selectedServerId', 'preferredProtocol', 'primaryDns',
+                         'secondaryDns', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner() && isValidId(settingId) && existing().ownerId == request.auth.uid;
+    }
+
+    match /connection_logs/{logId} {
+      allow get: if isOwner() && isValidId(logId) && existing().ownerId == request.auth.uid;
+      allow list: if isOwner() && existing().ownerId == request.auth.uid;
+
+      allow create: if isOwner() &&
+                       isValidId(logId) &&
+                       incoming().keys().hasAll([
+                         'ownerId', 'serverId', 'serverName', 'countryCode',
+                         'protocol', 'eventType', 'durationSec', 'bytesTransferred',
+                         'latencyMs', 'note', 'createdAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'ownerId', 'serverId', 'serverName', 'countryCode',
+                         'protocol', 'eventType', 'durationSec', 'bytesTransferred',
+                         'latencyMs', 'note', 'createdAt'
+                       ]) &&
+                       isValidConnectionLog(incoming());
+
+      allow update: if false;
+      allow delete: if isOwner() && isValidId(logId) && existing().ownerId == request.auth.uid;
+    }
+  }
+}

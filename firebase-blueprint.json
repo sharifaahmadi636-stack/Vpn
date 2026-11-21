@@ -1,0 +1,283 @@
+{
+  "entities": {
+    "VpnServer": {
+      "title": "VpnServer",
+      "description": "Global VPN server endpoint configuration managed exclusively by the system owner.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the VPN server node."
+        },
+        "country": {
+          "type": "string",
+          "description": "Localized country name."
+        },
+        "countryCode": {
+          "type": "string",
+          "description": "ISO 3166-1 alpha-2 country code."
+        },
+        "city": {
+          "type": "string",
+          "description": "City location of the VPN node."
+        },
+        "host": {
+          "type": "string",
+          "description": "Public IP address or domain hostname of the VPN endpoint."
+        },
+        "port": {
+          "type": "integer",
+          "description": "Tunnel port number (1-65535)."
+        },
+        "protocol": {
+          "type": "string",
+          "enum": ["WIREGUARD", "IKEV2", "OPENVPN", "VLESS_TLS"],
+          "description": "VPN tunneling protocol."
+        },
+        "cipher": {
+          "type": "string",
+          "description": "Cryptographic cipher suite."
+        },
+        "dns": {
+          "type": "string",
+          "description": "DNS resolver IP pushed to tunnel."
+        },
+        "tunnelAddress": {
+          "type": "string",
+          "description": "Virtual TUN interface client IPv4 address."
+        },
+        "mtu": {
+          "type": "integer",
+          "description": "Maximum Transmission Unit size (1200-1500)."
+        },
+        "publicKey": {
+          "type": "string",
+          "description": "Server public key or TLS fingerprint."
+        },
+        "region": {
+          "type": "string",
+          "description": "Geographic region grouping."
+        },
+        "loadPercent": {
+          "type": "integer",
+          "description": "Current server load percentage (0-100)."
+        },
+        "latencyMs": {
+          "type": "integer",
+          "description": "Measured round-trip latency in milliseconds."
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether this node is enabled for connections."
+        },
+        "recommended": {
+          "type": "boolean",
+          "description": "Whether this node is marked recommended."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "ownerId",
+        "name",
+        "country",
+        "countryCode",
+        "city",
+        "host",
+        "port",
+        "protocol",
+        "cipher",
+        "dns",
+        "tunnelAddress",
+        "mtu",
+        "publicKey",
+        "region",
+        "loadPercent",
+        "latencyMs",
+        "active",
+        "recommended",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "Owner-controlled global VPN system switches and security policy.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "systemEnabled": {
+          "type": "boolean",
+          "description": "Master control switch enabling or locking the VPN system."
+        },
+        "autoConnect": {
+          "type": "boolean",
+          "description": "Automatically connect on launch."
+        },
+        "killSwitch": {
+          "type": "boolean",
+          "description": "Strict drop-on-disconnect policy flag."
+        },
+        "dnsProtection": {
+          "type": "boolean",
+          "description": "Enforce encrypted DNS leak protection."
+        },
+        "fullTunnel": {
+          "type": "boolean",
+          "description": "Route all device traffic (0.0.0.0/0) vs split tunnel."
+        },
+        "persistentNotification": {
+          "type": "boolean",
+          "description": "Show live foreground tunnel telemetry notification."
+        },
+        "autoFailover": {
+          "type": "boolean",
+          "description": "Automatically select fastest active fallback server on failure."
+        },
+        "bypassedPackages": {
+          "type": "array",
+          "description": "Bounded list (max 50) of Android package names excluded from VPN routing."
+        },
+        "selectedServerId": {
+          "type": "string",
+          "description": "Document ID of the currently active/selected VPN server."
+        },
+        "preferredProtocol": {
+          "type": "string",
+          "enum": ["AUTO", "WIREGUARD", "IKEV2", "OPENVPN", "VLESS_TLS"],
+          "description": "Preferred global VPN protocol."
+        },
+        "primaryDns": {
+          "type": "string",
+          "description": "Primary DNS server IP."
+        },
+        "secondaryDns": {
+          "type": "string",
+          "description": "Secondary DNS server IP."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "ownerId",
+        "systemEnabled",
+        "autoConnect",
+        "killSwitch",
+        "dnsProtection",
+        "fullTunnel",
+        "persistentNotification",
+        "autoFailover",
+        "bypassedPackages",
+        "selectedServerId",
+        "preferredProtocol",
+        "primaryDns",
+        "secondaryDns",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ConnectionLog": {
+      "title": "ConnectionLog",
+      "description": "Owner audit log of VPN sessions and system configuration changes.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "serverId": {
+          "type": "string",
+          "description": "Related VPN server document ID."
+        },
+        "serverName": {
+          "type": "string",
+          "description": "Display name of related server or system target."
+        },
+        "countryCode": {
+          "type": "string",
+          "description": "Server country code."
+        },
+        "protocol": {
+          "type": "string",
+          "description": "Protocol used during event."
+        },
+        "eventType": {
+          "type": "string",
+          "enum": ["CONNECTED", "DISCONNECTED", "SYSTEM_UPDATED", "SERVER_ADDED", "SERVER_TOGGLED", "ERROR"],
+          "description": "Audit event category."
+        },
+        "durationSec": {
+          "type": "integer",
+          "description": "Session duration in seconds."
+        },
+        "bytesTransferred": {
+          "type": "integer",
+          "description": "Total tunnel bytes transferred."
+        },
+        "latencyMs": {
+          "type": "integer",
+          "description": "Measured latency at event time."
+        },
+        "note": {
+          "type": "string",
+          "description": "Human-readable audit summary."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Event server timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "ownerId",
+        "serverId",
+        "serverName",
+        "countryCode",
+        "protocol",
+        "eventType",
+        "durationSec",
+        "bytesTransferred",
+        "latencyMs",
+        "note",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/vpn_servers/{serverId}": {
+      "schema": { "$ref": "#/entities/VpnServer" },
+      "description": "Global VPN server nodes managed exclusively by the owner."
+    },
+    "/system_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/SystemSettings" },
+      "description": "Owner system-level VPN control configuration."
+    },
+    "/connection_logs/{logId}": {
+      "schema": { "$ref": "#/entities/ConnectionLog" },
+      "description": "Owner VPN connection and administrative audit logs."
+    }
+  }
+}

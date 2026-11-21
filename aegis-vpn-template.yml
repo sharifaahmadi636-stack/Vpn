@@ -1,0 +1,46 @@
+# Aegis VPN - Global Standard Server & Policy Configuration (.yml)
+# Compatible with Aegis VPN Owner Import/Export
+
+version: 1
+profile: aegis-vpn-global
+settings:
+  systemEnabled: true
+  autoConnect: false
+  autoFailover: true
+  killSwitch: true
+  dnsProtection: true
+  fullTunnel: false
+  persistentNotification: true
+  preferredProtocol: WIREGUARD
+  primaryDns: 1.1.1.1
+  secondaryDns: 9.9.9.9
+
+servers:
+  - name: Frankfurt Core-01
+    country: آلمان
+    countryCode: DE
+    city: Frankfurt
+    region: Europe
+    host: 1.1.1.1
+    port: 51820
+    protocol: WIREGUARD
+    cipher: ChaCha20-Poly1305
+    dns: 1.1.1.1
+    tunnelAddress: 10.8.0.2
+    mtu: 1420
+    active: true
+    recommended: true
+  - name: Zurich Vault-01
+    country: سوئیس
+    countryCode: CH
+    city: Zurich
+    region: Europe
+    host: 8.8.8.8
+    port: 443
+    protocol: VLESS_TLS
+    cipher: TLS 1.3 / XTLS
+    dns: 1.1.1.1
+    tunnelAddress: 10.8.0.4
+    mtu: 1400
+    active: true
+    recommended: false
