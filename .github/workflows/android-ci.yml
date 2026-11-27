@@ -80,6 +80,8 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
 
       - name: Accept Android SDK Licenses
         run: |
@@ -91,6 +93,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: "9.3.1"
+          cache-provider: "basic"
 
       - name: Prepare debug.keystore and .env for CI
         run: |
@@ -148,13 +151,20 @@ jobs:
           if command -v ruby >/dev/null 2>&1; then
             ruby -ryaml -e "YAML.load_file('aegis-vpn-template.yml'); YAML.load_file('.github/workflows/android-ci.yml')"
           else
-            python3 -c "import yaml" >/dev/null 2>&1 || python3 -m pip install --quiet pyyaml
+            python3 -c "import yaml" >/dev/null 2>&1 || python3 -m pip install --break-system-packages --quiet pyyaml
             python3 -c "import yaml; yaml.safe_load(open('aegis-vpn-template.yml')); yaml.safe_load(open('.github/workflows/android-ci.yml'))"
           fi
           echo "YAML validation passed"
 
       - name: Run Unit & Robolectric Tests
-        run: gradle :app:testDebugUnitTest --stacktrace --console=plain
+        run: |
+          if ! gradle :app:testDebugUnitTest --no-configuration-cache --console=plain; then
+            echo "=== UNIT TEST XML RESULTS ==="
+            for f in app/build/test-results/testDebugUnitTest/*.xml; do
+              [ -f "$f" ] && echo "--- $f ---" && cat "$f"
+            done
+            exit 1
+          fi
 
       - name: Upload Unit Test Reports on Failure
         if: failure()
@@ -165,10 +175,10 @@ jobs:
           if-no-files-found: ignore
 
       - name: Run Android Lint
-        run: gradle :app:lintDebug --stacktrace --console=plain
+        run: gradle :app:lintDebug --no-configuration-cache --console=plain
 
       - name: Build Debug APK
-        run: gradle :app:assembleDebug --stacktrace --console=plain
+        run: gradle :app:assembleDebug --no-configuration-cache --console=plain
 
       - name: Upload Lint Report
         if: always()
