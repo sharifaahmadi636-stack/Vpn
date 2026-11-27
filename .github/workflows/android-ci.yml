@@ -78,6 +78,9 @@ jobs:
           distribution: "temurin"
           java-version: "21"
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
       - name: Accept Android SDK Licenses
         run: |
           if [ -n "$ANDROID_HOME" ] && [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
@@ -151,13 +154,21 @@ jobs:
           echo "YAML validation passed"
 
       - name: Run Unit & Robolectric Tests
-        run: gradle :app:testDebugUnitTest --stacktrace
+        run: gradle :app:testDebugUnitTest --stacktrace --console=plain
+
+      - name: Upload Unit Test Reports on Failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: aegis-vpn-unit-test-reports
+          path: app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: ignore
 
       - name: Run Android Lint
-        run: gradle :app:lintDebug --stacktrace
+        run: gradle :app:lintDebug --stacktrace --console=plain
 
       - name: Build Debug APK
-        run: gradle :app:assembleDebug --stacktrace
+        run: gradle :app:assembleDebug --stacktrace --console=plain
 
       - name: Upload Lint Report
         if: always()
