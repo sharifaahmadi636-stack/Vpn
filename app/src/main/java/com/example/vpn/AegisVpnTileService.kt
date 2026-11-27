@@ -1,16 +1,15 @@
 package com.example.vpn
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
-import androidx.annotation.RequiresApi
 import com.example.MainActivity
 import com.example.auth.OwnerAuthManager
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 
-@RequiresApi(Build.VERSION_CODES.N)
 class AegisVpnTileService : TileService() {
 
     override fun onStartListening() {
@@ -34,8 +33,7 @@ class AegisVpnTileService : TileService() {
                 )
                 startActivityAndCollapse(pending)
             } else {
-                @Suppress("DEPRECATION")
-                startActivityAndCollapse(intent)
+                launchLegacyTileActivity(intent)
             }
             return
         }
@@ -85,5 +83,11 @@ class AegisVpnTileService : TileService() {
             }
         }
         tile.updateTile()
+    }
+
+    @SuppressLint("StartActivityAndCollapseDeprecated")
+    @Suppress("DEPRECATION")
+    private fun launchLegacyTileActivity(intent: Intent) {
+        startActivityAndCollapse(intent)
     }
 }

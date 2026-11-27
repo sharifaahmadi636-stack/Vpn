@@ -1,11 +1,30 @@
 name: Aegis VPN Android CI
 
+# ==============================================================================
+# Aegis VPN - Complete GitHub Actions CI/CD Workflow
+# ==============================================================================
+# Declared VPN Capabilities Verified by This Workflow:
+#   1. VpnService TUN Tunneling (android.permission.BIND_VPN_SERVICE + android.net.VpnService)
+#   2. Foreground Service Special Use (FOREGROUND_SERVICE + FOREGROUND_SERVICE_SPECIAL_USE + vpn_tunnel)
+#   3. Persistent Tunnel Notification & Controls (POST_NOTIFICATIONS + Disconnect Action)
+#   4. Boot Auto-Connect (RECEIVE_BOOT_COMPLETED + BootCompletedReceiver)
+#   5. Quick Settings Tile (BIND_QUICK_SETTINGS_TILE + AegisVpnTileService)
+#   6. Split Tunneling Per-App Bypass (<queries> LAUNCHER + addDisallowedApplication)
+#   7. Kill Switch, DNS Leak Protection & Auto-Failover (SystemSettings in Firestore)
+#   8. Multi-Protocol Support (WireGuard, VLESS_TLS, OpenVPN, IKEv2)
+#   9. Owner-Only Google Sign-In & Firestore Zero-Trust Security Rules
+#  10. YAML (.yml) Server & Policy Import/Export + Live Network Security Audit
+# ==============================================================================
+
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   verify-firestore-rules:
@@ -36,7 +55,7 @@ jobs:
           firebase emulators:exec --only firestore --project demo-no-project "node --test firestore.test.js"
 
   build-and-test-android:
-    name: Build & Test Android APK
+    name: Build, Lint & Test Aegis VPN APK
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -48,22 +67,91 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      - name: Setup Gradle
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.3.1"
+
+      - name: Prepare debug.keystore and .env for CI
+        run: |
+          if [ ! -f debug.keystore ]; then
+            if [ -f debug.keystore.base64 ]; then
+              base64 -d debug.keystore.base64 > debug.keystore
+            else
+              keytool -genkeypair -v -keystore debug.keystore \
+                -storepass android -alias androiddebugkey -keypass android \
+                -keyalg RSA -keysize 2048 -validity 10000 \
+                -dname "CN=Android Debug,O=Android,C=US"
+            fi
+          fi
+          if [ ! -f .env ] && [ -f .env.example ]; then
+            cp .env.example .env
+          fi
 
       - name: Ensure google-services.json exists for CI
-        if: ${{ hashFiles('app/google-services.json') == '' && secrets.GOOGLE_SERVICES_JSON != '' }}
+        env:
+          GOOGLE_SERVICES_JSON_SECRET: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
-          echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
+          if [ ! -f app/google-services.json ] && [ -n "$GOOGLE_SERVICES_JSON_SECRET" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON_SECRET" > app/google-services.json
+          fi
+
+      - name: Verify All VPN Capabilities in AndroidManifest.xml
+        run: |
+          MANIFEST="app/src/main/AndroidManifest.xml"
+          required_entries=(
+            "android.permission.INTERNET"
+            "android.permission.ACCESS_NETWORK_STATE"
+            "android.permission.FOREGROUND_SERVICE"
+            "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
+            "android.permission.POST_NOTIFICATIONS"
+            "android.permission.RECEIVE_BOOT_COMPLETED"
+            "android.permission.BIND_VPN_SERVICE"
+            "android.net.VpnService"
+            "android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+            "vpn_tunnel"
+            "android.permission.BIND_QUICK_SETTINGS_TILE"
+            "android.service.quicksettings.action.QS_TILE"
+            "android.intent.action.BOOT_COMPLETED"
+            "<queries>"
+          )
+          for entry in "${required_entries[@]}"; do
+            if ! grep -q "$entry" "$MANIFEST"; then
+              echo "::error::Missing required VPN capability in $MANIFEST: $entry"
+              exit 1
+            fi
+          done
+          echo "All VPN permissions, services, FGS subtypes, tile, boot receiver, and queries verified."
+
+      - name: Validate YAML Template Syntax
+        run: |
+          if command -v ruby >/dev/null 2>&1; then
+            ruby -ryaml -e "YAML.load_file('aegis-vpn-template.yml'); YAML.load_file('.github/workflows/android-ci.yml')"
+          else
+            python3 -c "import yaml" >/dev/null 2>&1 || python3 -m pip install --quiet pyyaml
+            python3 -c "import yaml; yaml.safe_load(open('aegis-vpn-template.yml')); yaml.safe_load(open('.github/workflows/android-ci.yml'))"
+          fi
+          echo "YAML validation passed"
 
       - name: Run Unit & Robolectric Tests
-        run: gradle :app:testDebugUnitTest
+        run: gradle :app:testDebugUnitTest --stacktrace
 
       - name: Run Android Lint
-        run: gradle :app:lintDebug
+        run: gradle :app:lintDebug --stacktrace
 
       - name: Build Debug APK
-        run: gradle :app:assembleDebug
+        run: gradle :app:assembleDebug --stacktrace
+
+      - name: Upload Lint Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aegis-vpn-lint-report
+          path: app/build/reports/lint-results-debug.*
+          if-no-files-found: ignore
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4

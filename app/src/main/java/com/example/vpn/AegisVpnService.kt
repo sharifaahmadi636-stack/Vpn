@@ -337,13 +337,11 @@ class AegisVpnService : VpnService() {
     }
 
     private fun requestTileRefresh() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            runCatching {
-                TileService.requestListeningState(
-                    this,
-                    ComponentName(this, AegisVpnTileService::class.java)
-                )
-            }
+        runCatching {
+            TileService.requestListeningState(
+                this,
+                ComponentName(this, AegisVpnTileService::class.java)
+            )
         }
     }
 

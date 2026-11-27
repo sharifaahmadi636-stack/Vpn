@@ -1,5 +1,16 @@
 # Aegis VPN - Global Standard Server & Policy Configuration (.yml)
 # Compatible with Aegis VPN Owner Import/Export
+#
+# Included VPN Capabilities:
+# - systemEnabled: Master owner switch controlling tunnel availability
+# - autoConnect: Boot-time automatic VPN connection (BootCompletedReceiver)
+# - autoFailover: Automatic switch to fastest healthy node on disconnect/high latency
+# - killSwitch: Block non-tunnel leaks when active
+# - dnsProtection: Encrypted/clean DNS enforcement (primaryDns & secondaryDns)
+# - fullTunnel: Route 0.0.0.0/0 (true) or split control-plane routes (false)
+# - persistentNotification: Live status, speed & disconnect action in foreground notification
+# - bypassedPackages: Per-app Split Tunneling exclusion list (up to 50 packages)
+# - protocols: WIREGUARD, VLESS_TLS, OPENVPN, IKEV2
 
 version: 1
 profile: aegis-vpn-global
@@ -14,6 +25,8 @@ settings:
   preferredProtocol: WIREGUARD
   primaryDns: 1.1.1.1
   secondaryDns: 9.9.9.9
+  bypassedPackages:
+    - com.android.vending
 
 servers:
   - name: Frankfurt Core-01
@@ -42,5 +55,19 @@ servers:
     dns: 1.1.1.1
     tunnelAddress: 10.8.0.4
     mtu: 1400
+    active: true
+    recommended: false
+  - name: Tokyo Edge-01
+    country: ژاپن
+    countryCode: JP
+    city: Tokyo
+    region: Asia
+    host: 9.9.9.9
+    port: 1194
+    protocol: OPENVPN
+    cipher: AES-256-GCM
+    dns: 9.9.9.9
+    tunnelAddress: 10.8.0.6
+    mtu: 1420
     active: true
     recommended: false

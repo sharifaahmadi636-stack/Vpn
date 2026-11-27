@@ -1,6 +1,9 @@
 package com.example.ui.components
 
+import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -56,8 +59,17 @@ fun SplitTunnelSheet(
     val installedApps = remember(context) {
         val pm = context.packageManager
         val selfPkg = context.packageName
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         runCatching {
-            pm.getInstalledApplications(0)
+            val resolved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pm.queryIntentActivities(launcherIntent, PackageManager.ResolveInfoFlags.of(0L))
+            } else {
+                @Suppress("DEPRECATION")
+                pm.queryIntentActivities(launcherIntent, 0)
+            }
+            resolved
+                .mapNotNull { it.activityInfo?.applicationInfo }
+                .distinctBy { it.packageName }
                 .filter { app ->
                     app.packageName != selfPkg &&
                         (app.flags and ApplicationInfo.FLAG_SYSTEM) == 0

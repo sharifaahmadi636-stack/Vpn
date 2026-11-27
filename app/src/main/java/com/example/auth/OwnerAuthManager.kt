@@ -8,6 +8,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
 import com.example.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
@@ -103,6 +104,8 @@ object OwnerAuthManager {
                 }
             } catch (e: CancellationException) {
                 throw e
+            } catch (_: NoCredentialException) {
+                onUnauthenticated()
             } catch (_: Exception) {
                 onUnauthenticated()
             }
@@ -150,6 +153,9 @@ object OwnerAuthManager {
             } catch (e: GetCredentialCancellationException) {
                 Log.w(TAG, "Google Sign-In flow cancelled or dismissed: ${e.message}", e)
                 onAuthCancelled()
+            } catch (e: NoCredentialException) {
+                Log.w(TAG, "No Google credentials found on device: ${e.message}", e)
+                onAuthError("هیچ حساب گوگل فعالی روی دستگاه یافت نشد. لطفاً حساب مالک را اضافه کنید.")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
